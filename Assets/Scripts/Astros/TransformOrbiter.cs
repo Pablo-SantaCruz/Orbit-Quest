@@ -64,9 +64,9 @@ public class TransformOrbiter : MonoBehaviour
         if (_pathLine == null || _astro == null)
             return;
 
-        bool precision = _astro.IsPrecisionMode;
-        int count = precision ? CopyOrbitPolyline(_orbitPathBuffer) : 0;
-        _pathLine.Update(precision, _orbitPathBuffer, count);
+        bool enablePathRenderer = _astro.CurrentGameState != GameState.Contemplative;
+        int count = enablePathRenderer ? CopyOrbitPolyline(_orbitPathBuffer) : 0;
+        _pathLine.Update(enablePathRenderer, _orbitPathBuffer, count);
     }
 
     void OnEnable()

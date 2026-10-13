@@ -25,7 +25,7 @@ public class Astro : MonoBehaviour, IPointerDownHandler, IEditable, IDragHandler
     public float BodyRadius => _bodyData.radius;
     public bool HasOrbiter() => _orbiter != null;
     public LineRenderer OrbitPathRenderer => _orbitPathRenderer;
-    public bool IsPrecisionMode => _levelData != null && _levelData.CurrentState == GameState.Precision;
+    public GameState CurrentGameState => _levelData?.CurrentState ?? GameState.None;
 
     public EditableData Data => new EditableData
     {
