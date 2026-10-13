@@ -14,8 +14,10 @@ public class Orb : MonoBehaviour, ILimitable
     public static event Action OnOrbitEnter, OnOrbitExit, OnSpawn, OnDespawn;
 
     [SerializeField] PlayerData _playerData;
+    [SerializeField] LevelData _levelData;
     [SerializeField] LineRenderer _trajectoryRenderer;
     [SerializeField] LineRenderer _directionRenderer;
+    [SerializeField] LineRenderer _tensionRenderer;
     private RigidbodyOrbiter _orbiterController;
     private LineRendererController _lineRendererController;
     private Rigidbody _rb;
@@ -44,7 +46,7 @@ public class Orb : MonoBehaviour, ILimitable
         _rb = GetComponent<Rigidbody>();
         _orbiterController = new RigidbodyOrbiter(_rb, transform, OnOrbitEnter, OnOrbitExit,
             _playerData != null ? _playerData.ToOrbiterSettings() : OrbiterSettings.Default);
-        _lineRendererController = new LineRendererController(_trajectoryRenderer, _directionRenderer, _orbiterController, transform.localScale.x);
+        _lineRendererController = new LineRendererController(_trajectoryRenderer, _directionRenderer, _tensionRenderer, _orbiterController, transform.localScale.x);
     }
 
     void OnEnable()
@@ -99,6 +101,15 @@ public class Orb : MonoBehaviour, ILimitable
         }
 
         _lineRendererController.UpdateDirection(transform.position, _rb.linearVelocity);
+
+        float deviation = 0f;
+        Vector3 center = transform.position;
+        bool precision = _levelData != null && _levelData.CurrentState == GameState.Precision;
+        bool sampled = precision && _orbiterController.TryEvaluateCircularDeviation(out deviation, out center);
+        float stability = sampled
+            ? Mathf.Clamp01(1f - deviation / OrbiterTuning.CircularRedDeviation)
+            : 0f;
+        _lineRendererController.UpdateTension(sampled, transform.position, center, stability);
 
         if (_aimDirection.sqrMagnitude > 0.0001f)
         {

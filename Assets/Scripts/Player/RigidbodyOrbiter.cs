@@ -177,30 +177,52 @@ public class RigidbodyOrbiter
     // Captured orbit — gravity + minimum tangential assist to stay in orbit
     // ---------------------------------------------------------
 
-    void ApplyMinThrustAssist(OrbitData data)
+    struct CapturedMotion
     {
+        public Vector3 center;
+        public float radialSpeed;
+        public float tangentialSpeed;
+        public float circularSpeed;
+        public Vector3 tangentDirection;
+    }
+
+    bool TrySampleCapturedMotion(OrbitData data, out CapturedMotion motion)
+    {
+        motion = default;
+
         Vector3 relativeVelocity = _rb.linearVelocity - data.velocity;
         Vector3 toCenter = data.transform.position - _transform.position;
         float distance = toCenter.magnitude;
 
         if (distance < 0.01f)
-            return;
+            return false;
 
         Vector3 centerDir = toCenter.normalized;
-        Vector3 tangentialVelocity = relativeVelocity - centerDir * Vector3.Dot(relativeVelocity, centerDir);
+        float radialSpeed = Vector3.Dot(relativeVelocity, centerDir);
+        Vector3 tangentialVelocity = relativeVelocity - centerDir * radialSpeed;
         float tangentialSpeed = tangentialVelocity.magnitude;
 
-        Vector3 tangentDir = tangentialSpeed > 0.001f
+        motion.center = data.transform.position;
+        motion.radialSpeed = radialSpeed;
+        motion.tangentialSpeed = tangentialSpeed;
+        motion.circularSpeed = Mathf.Sqrt(data.gravity / Mathf.Max(distance, 0.01f));
+        motion.tangentDirection = tangentialSpeed > 0.001f
             ? tangentialVelocity.normalized
             : Vector3.Cross(centerDir, Vector3.forward).normalized;
+        return true;
+    }
 
-        float idealSpeed = Mathf.Sqrt(data.gravity / Mathf.Max(distance, 0.01f));
-        if (tangentialSpeed >= idealSpeed || _settings.ThrusterResourceSettings.MinThrustAssist < 0.0001f)
+    void ApplyMinThrustAssist(OrbitData data)
+    {
+        if (!TrySampleCapturedMotion(data, out CapturedMotion motion))
             return;
 
-        float deficit = idealSpeed - tangentialSpeed;
+        if (motion.tangentialSpeed >= motion.circularSpeed || _settings.ThrusterResourceSettings.MinThrustAssist < 0.0001f)
+            return;
+
+        float deficit = motion.circularSpeed - motion.tangentialSpeed;
         float assist = Mathf.Min(deficit * 2f, _settings.ThrusterResourceSettings.MinThrustAssist);
-        _rb.AddForce(tangentDir * assist, ForceMode.Acceleration);
+        _rb.AddForce(motion.tangentDirection * assist, ForceMode.Acceleration);
 
         Debug.DrawLine(_transform.position, data.transform.position, Color.cyan);
     }
@@ -362,6 +384,26 @@ public class RigidbodyOrbiter
 
     public Vector3[] TrajectoryPoints => _trajectoryPoints;
     public float Speed => _rb.linearVelocity.magnitude;
+
+    public bool TryEvaluateCircularDeviation(out float deviation, out Vector3 center)
+    {
+        deviation = 0f;
+        center = default;
+
+        if (_capturedOrbit == null || !IsValidSource(_capturedOrbit))
+            return false;
+
+        if (!TrySampleCapturedMotion(_capturedOrbit.Data, out CapturedMotion motion))
+            return false;
+
+        if (motion.circularSpeed < 0.0001f)
+            return false;
+
+        float tangentialError = motion.tangentialSpeed - motion.circularSpeed;
+        deviation = Mathf.Sqrt(tangentialError * tangentialError + motion.radialSpeed * motion.radialSpeed) / motion.circularSpeed;
+        center = motion.center;
+        return true;
+    }
 
     public void UpdateSettings(OrbiterSettings settings)
     {

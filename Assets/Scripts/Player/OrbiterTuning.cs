@@ -28,6 +28,9 @@ public static class OrbiterTuning
 
     public const float StabilizerMaxThrustSpeedMin = 1f;
     public const float StabilizerMaxThrustSpeedMax = 25f;
+
+    /// <summary>Tangential escape error, sqrt(2) - 1. That deviation maps to stability 0.</summary>
+    public const float CircularRedDeviation = 0.41421356f;
     public static float StabilizerMaxThrustSpeedEditMin = StabilizerMaxThrustSpeedMin;
     public static float StabilizerMaxThrustSpeedEditMax = StabilizerMaxThrustSpeedMax;
 }
