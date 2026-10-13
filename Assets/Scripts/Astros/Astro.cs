@@ -14,6 +14,7 @@ public class Astro : MonoBehaviour, IPointerDownHandler, IEditable, IDragHandler
     [SerializeField] BodyData _bodyData;
     [SerializeField] float _rotationSpeed = 5f;
     [SerializeField] Transform _transform, _baseTransform, _orbitTransform;
+    [SerializeField] LineRenderer _orbitPathRenderer;
 
     private AstroSpawnPreset _spawnSource;
     private IOrbitable _orbit;
@@ -23,6 +24,8 @@ public class Astro : MonoBehaviour, IPointerDownHandler, IEditable, IDragHandler
 
     public float BodyRadius => _bodyData.radius;
     public bool HasOrbiter() => _orbiter != null;
+    public LineRenderer OrbitPathRenderer => _orbitPathRenderer;
+    public bool IsPrecisionMode => _levelData != null && _levelData.CurrentState == GameState.Precision;
 
     public EditableData Data => new EditableData
     {
@@ -62,12 +65,14 @@ public class Astro : MonoBehaviour, IPointerDownHandler, IEditable, IDragHandler
     void OnEnable()
     {
         Apply();
+        ApplyOrbitPathPresence();
     }
     void OnValidate()
     {
         CacheReferences();
         UpdateBaseValues();
         UpdateOrbitValues();
+        ApplyOrbitPathPresence();
     }
     void Update()
     {
@@ -101,6 +106,16 @@ public class Astro : MonoBehaviour, IPointerDownHandler, IEditable, IDragHandler
     {
         UpdateBaseValues();
         UpdateOrbitValues();
+    }
+    void ApplyOrbitPathPresence()
+    {
+        if (_orbitPathRenderer == null)
+            return;
+
+        GameObject pathObject = _orbitPathRenderer.gameObject;
+        bool active = GetComponent<TransformOrbiter>() != null;
+        if (pathObject.activeSelf != active)
+            pathObject.SetActive(active);
     }
 
     public void Selected()

@@ -29,6 +29,11 @@ public class TransformOrbiter : MonoBehaviour
     private IEditable[] _editableTargets = Array.Empty<IEditable>();
 
     const int KeplerIterations = 5;
+    const int KeplerPathSegments = 64;
+
+    Astro _astro;
+    OrbitPathLine _pathLine;
+    readonly Vector3[] _orbitPathBuffer = new Vector3[AstroTuning.OrbiterPathSampleMax];
 
     public float Speed => _speed;
     public float Radius => _radius;
@@ -46,6 +51,23 @@ public class TransformOrbiter : MonoBehaviour
     }
 
     bool UsePathMode() => HasValidTargets() && _targets.Length >= 2;
+
+    void Awake()
+    {
+        _astro = GetComponent<Astro>();
+        if (_astro != null && _astro.OrbitPathRenderer != null)
+            _pathLine = new OrbitPathLine(_astro.OrbitPathRenderer);
+    }
+
+    void LateUpdate()
+    {
+        if (_pathLine == null || _astro == null)
+            return;
+
+        bool precision = _astro.IsPrecisionMode;
+        int count = precision ? CopyOrbitPolyline(_orbitPathBuffer) : 0;
+        _pathLine.Update(precision, _orbitPathBuffer, count);
+    }
 
     void OnEnable()
     {
@@ -544,6 +566,73 @@ public class TransformOrbiter : MonoBehaviour
         _eccentricity = Mathf.Clamp(value, AstroTuning.OrbiterEccentricityEditMin, AstroTuning.OrbiterEccentricityEditMax);
         if (!UsePathMode())
             SetValues();
+    }
+
+    public int CopyOrbitPolyline(Vector3[] destination)
+    {
+        if (destination == null || destination.Length < 3 || !HasValidTargets())
+            return 0;
+
+        if (UsePathMode())
+            return CopyEnvelopePolyline(destination);
+
+        return CopyKeplerPolyline(destination);
+    }
+
+    int CopyEnvelopePolyline(Vector3[] destination)
+    {
+        if (_pathPoints == null || _pathPoints.Count < 3)
+            BuildEnvelopePath();
+
+        if (_pathPoints == null || _pathPoints.Count < 3)
+            return 0;
+
+        Vector3 center = GetBarycenter();
+        int count = Mathf.Min(_pathPoints.Count, destination.Length);
+        for (int i = 0; i < count; i++)
+        {
+            Vector2 point = _pathPoints[i];
+            destination[i] = center + new Vector3(point.x, 0f, point.y);
+        }
+        return count;
+    }
+
+    int CopyKeplerPolyline(Vector3[] destination)
+    {
+        int segments = Mathf.Min(KeplerPathSegments, destination.Length);
+        float minSafeMargin = GetMinimumSafeMargin();
+        float e = Mathf.Clamp(_eccentricity, 0.01f, 0.99f);
+        float minSemiMajorAxis = minSafeMargin / (1f - e);
+        float effectiveRadius = Mathf.Max(_radius, minSemiMajorAxis);
+        Vector3 focus = GetFocus();
+
+        bool orient = _targets.Length > 1 && _targets[0] != null && _targets[1] != null;
+        float cos = 1f;
+        float sin = 0f;
+        if (orient)
+        {
+            Vector3 dir = _targets[1].position - _targets[0].position;
+            float orientation = Mathf.Atan2(dir.z, dir.x);
+            cos = Mathf.Cos(orientation);
+            sin = Mathf.Sin(orientation);
+        }
+
+        for (int i = 0; i < segments; i++)
+        {
+            float nu = i / (float)segments * Mathf.PI * 2f;
+            float r = RadiusAtTrueAnomaly(effectiveRadius, _eccentricity, nu);
+            float x = r * Mathf.Cos(nu);
+            float z = r * Mathf.Sin(nu);
+            if (orient)
+            {
+                float rotatedX = x * cos - z * sin;
+                float rotatedZ = x * sin + z * cos;
+                x = rotatedX;
+                z = rotatedZ;
+            }
+            destination[i] = focus + new Vector3(x, 0f, z);
+        }
+        return segments;
     }
 
 }
