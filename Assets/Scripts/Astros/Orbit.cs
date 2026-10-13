@@ -30,7 +30,8 @@ public class Orbit : MonoBehaviour, IOrbitable
     {
         Debug.DrawRay(_transform.position, Vector3.up, Color.green, 1f);
         Debug.DrawRay(_transform.parent.position, Vector3.right, Color.blue, 1f);
-        _shaderController.Update();
+        if (_shaderController != null)
+            _shaderController.Update();
     }
     void LateUpdate()
     {
@@ -40,7 +41,10 @@ public class Orbit : MonoBehaviour, IOrbitable
     void CacheReferences()
     {
         if (!_transform) _transform = transform;
-        _shaderController = new OrbitRenderer(_orbitRenderer, _transform, UnityEngine.Camera.main.transform);
+        UnityEngine.Camera mainCamera = UnityEngine.Camera.main;
+        if (mainCamera == null)
+            return;
+        _shaderController = new OrbitRenderer(_orbitRenderer, _transform, mainCamera.transform);
     }
     public void EnterOrbit()
     {
