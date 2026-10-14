@@ -8,11 +8,13 @@ public class PlayerData : ScriptableObject
     [SerializeField] ImpulseResource _impulseResource;
     [SerializeField] ThrusterResource _thrusterResource;
     [SerializeField] InertiaResource _inertiaResource;
+    [SerializeField] FuelResource _fuelResource;
     [SerializeField] PlayerStatus _status = PlayerStatus.Alive;
     [SerializeField] Vector3 _cursorWorld;
     public ImpulseResource ImpulseResource => _impulseResource;
     public ThrusterResource ThrusterResource => _thrusterResource;
     public InertiaResource InertiaResource => _inertiaResource;
+    public FuelResource FuelResource => _fuelResource;
     public bool IsAlive => _status == PlayerStatus.Alive;
     public Vector3 CursorWorld => _cursorWorld;
     public OrbiterSettings ToOrbiterSettings()
@@ -69,6 +71,35 @@ public class PlayerData : ScriptableObject
     {
         _inertiaResource.UpdateStabilizerMaxThrustSpeed(value);
         OrbiterConfigUpdated?.Invoke();
+    }
+
+    public void UpdateFuelCostPerSecond(float value)
+    {
+        if (_fuelResource == null) return;
+        _fuelResource.UpdateCostPerSecond(value);
+    }
+
+    public void UpdateFuelCapacity(float value)
+    {
+        if (_fuelResource == null) return;
+        _fuelResource.UpdateCapacity(value);
+    }
+
+    public void UpdateFuelRechargeWhenIdle(bool value)
+    {
+        if (_fuelResource == null) return;
+        _fuelResource.UpdateRechargeWhenIdle(value);
+    }
+
+    public void UpdateFuelRechargeDelay(float value)
+    {
+        if (_fuelResource == null) return;
+        _fuelResource.UpdateRechargeDelay(value);
+    }
+
+    public void FillFuel()
+    {
+        _fuelResource?.Fill();
     }
     public void SetPlayerStatus(PlayerStatus status)
     {

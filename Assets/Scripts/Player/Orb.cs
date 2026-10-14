@@ -55,6 +55,7 @@ public class Orb : MonoBehaviour, ILimitable
         _aimDirection = Vector2.zero;
         _orbiterController?.OnEnable();
         _playerData.ImpulseResource?.ResetForSpawn();
+        _playerData.FuelResource?.ResetForSpawn();
         OnSpawn?.Invoke();
 
         _playerData.OrbiterConfigUpdated += SyncOrbiterFromConfig;
@@ -63,13 +64,25 @@ public class Orb : MonoBehaviour, ILimitable
 
     void FixedUpdate()
     {
+        bool thrustAllowed = _playerData.FuelResource == null
+            || _thrustInput.sqrMagnitude <= 0.0001f
+            || _playerData.FuelResource.TryConsumeThrust(Time.fixedDeltaTime);
+
         _orbiterController?.FixedUpdate(_thrustInput);
-        _orbiterController?.ApplyThrust(_thrustInput);
+        if (thrustAllowed)
+            _orbiterController?.ApplyThrust(_thrustInput);
     }
 
     void Update()
     {
         _playerData.ImpulseResource?.Tick(Time.deltaTime);
+
+        if (_playerData.FuelResource == null || _rb == null)
+            return;
+
+        float idleSpeed = OrbiterTuning.FuelIdleSpeed;
+        bool idle = _rb.linearVelocity.sqrMagnitude <= idleSpeed * idleSpeed;
+        _playerData.FuelResource.TickRecharge(idle, Time.deltaTime);
     }
 
     /// <summary>Called by the Move input action (e.g. from PlayerController). Passes the current movement direction.</summary>
@@ -163,7 +176,13 @@ public class Orb : MonoBehaviour, ILimitable
 
     public void Impulse(Vector3 cursorWorldPosition)
     {
-        if (_playerData.ImpulseResource == null || !_playerData.ImpulseResource.TryConsumeImpulse())
+        if (_playerData.ImpulseResource == null || !_playerData.ImpulseResource.IsReady)
+            return;
+
+        if (_playerData.FuelResource != null && !_playerData.FuelResource.TrySpendImpulse())
+            return;
+
+        if (!_playerData.ImpulseResource.TryConsumeImpulse())
             return;
 
         _orbiterController.Impulse(cursorWorldPosition);

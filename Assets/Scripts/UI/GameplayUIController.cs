@@ -67,10 +67,13 @@ public class GameplayUIController : MonoBehaviour
         _playerInfo.UpdateSpeedText(_playerData.ThrusterResource.Speed);
         _playerInfo.UpdateImpulseBar(_playerData.ImpulseResource.NormalizedEnergy);
         _playerInfo.UpdateInertiaStabilizerText(_playerData.InertiaResource.InertiaStabilizer);
+        UpdateFuelBar();
     }
 
     void LateUpdate()
     {
+        UpdateFuelBar();
+
         if (_trackedEditable == null || !_astroInfo.Root.activeSelf)
             return;
 
@@ -143,6 +146,18 @@ public class GameplayUIController : MonoBehaviour
     void HandleInertiaStabilizerChanged()
     {
         _playerInfo.UpdateInertiaStabilizerText(_playerData.InertiaResource.InertiaStabilizer);
+    }
+    void UpdateFuelBar()
+    {
+        if (_playerData == null || _playerInfo == null)
+            return;
+
+        FuelResource fuel = _playerData.FuelResource;
+        if (fuel == null)
+            return;
+
+        float normalized = fuel.Capacity <= 0f ? 0f : fuel.Amount / fuel.Capacity;
+        _playerInfo.UpdateFuelBar(normalized);
     }
     void HandlePanelEvent(PanelEnum panelEnum)
     {

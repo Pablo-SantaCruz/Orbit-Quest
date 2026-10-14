@@ -62,8 +62,13 @@ public class PlayerInputController : MonoBehaviour
     void Update()
     {
         UpdateCursorWorld();
-        
-        if (!_canReadInputs) return;
+
+        if (!_canReadInputs)
+        {
+            _lastMoveValue = Vector3.zero;
+            _orb.SetThrustInput(Vector3.zero);
+            return;
+        }
 
         Vector3 orbPos = _orbGameObject.transform.position;
         Vector2 direction = new Vector2(_playerData.CursorWorld.x - orbPos.x, _playerData.CursorWorld.z - orbPos.z);
@@ -117,6 +122,13 @@ public class PlayerInputController : MonoBehaviour
     /// <summary>Called by the Move input action. Passes the movement vector to the orb for thrust (used when Apply Thrust is not held).</summary>
     public void Move(InputAction.CallbackContext context)
     {
+        if (!_canReadInputs)
+        {
+            _lastMoveValue = Vector3.zero;
+            _orb.SetThrustInput(Vector3.zero);
+            return;
+        }
+
         Vector2 moveValue = context.ReadValue<Vector2>();
 
         Vector3 camForward = Vector3.ProjectOnPlane(UnityEngine.Camera.main.transform.forward, Vector3.up).normalized;
@@ -125,8 +137,6 @@ public class PlayerInputController : MonoBehaviour
         _lastMoveValue = camRight * moveValue.x + camForward * moveValue.y;
 
         _lastMoveValue = Vector3.ClampMagnitude(_lastMoveValue, 1f);
-
-        if (!_canReadInputs) return;
         _orb.SetThrustInput(_lastMoveValue);
     }
 
