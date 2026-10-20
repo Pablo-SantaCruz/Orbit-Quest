@@ -1,5 +1,7 @@
 using UnityEngine;
+using UnityEngine.EventSystems;
 using UnityEngine.InputSystem;
+using TMPro;
 
 public class EditorInputController : MonoBehaviour
 {
@@ -59,7 +61,20 @@ public class EditorInputController : MonoBehaviour
         if (_astroManager == null || !_levelData.IsInEditMode) return;
         if (_levelData.IsPaused) return;
         if (type == AstroType.None) return;
+        if (IsTextFieldFocused()) return;
 
         _astroManager.CreateAstro(type, _playerData.CursorWorld);
+    }
+
+    static bool IsTextFieldFocused()
+    {
+        EventSystem eventSystem = EventSystem.current;
+        if (eventSystem == null) return false;
+
+        GameObject selected = eventSystem.currentSelectedGameObject;
+        if (selected == null) return false;
+
+        TMP_InputField field = selected.GetComponent<TMP_InputField>();
+        return field != null && field.isFocused;
     }
 }

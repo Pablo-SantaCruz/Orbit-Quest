@@ -78,7 +78,7 @@ public class CameraInputController : MonoBehaviour
 
         if (context.control.device is Mouse)
         {
-            if (_pointerOverUI) return;
+            if (IsPointerOverUI()) return;
             CameraInput?.Invoke(InputType.Zoom, context.ReadValue<float>() * _mouseWheelZoomStep);
         }
         else
