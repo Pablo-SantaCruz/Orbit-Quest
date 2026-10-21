@@ -20,6 +20,7 @@ public class GameplayUIController : MonoBehaviour
     private AstroInfo _astroInfo;
     private InGameMenu _inGameMenu;
     private IEditable _trackedEditable;
+    private IEditable _panelSubject;
 
     
     Dictionary<RuntimeUIEvent, Action> _eventHandlers => new Dictionary<RuntimeUIEvent, Action>
@@ -74,16 +75,24 @@ public class GameplayUIController : MonoBehaviour
     {
         UpdateFuelBar();
 
-        if (_trackedEditable == null || !_astroInfo.Root.activeSelf)
+        if (_astroInfo == null || !_astroInfo.Root.activeSelf)
             return;
 
-        if (_trackedEditable is not UnityEngine.Object trackedObject || trackedObject == null)
+        if (_trackedEditable is not UnityEngine.Object subjectObject || subjectObject == null)
         {
             ClearTrackedAstro();
             return;
         }
 
-        _astroInfo.Follow(_trackedEditable);
+        if (!ReferenceEquals(_panelSubject, _trackedEditable))
+        {
+            _panelSubject = _trackedEditable;
+            _astroInfo.Update(_trackedEditable);
+        }
+        else
+            _astroInfo.Follow(_trackedEditable);
+
+        _astroInfo.SetExploration(_trackedEditable);
     }
     
     void HandleUIEvent(UIEvent uiEvent)
@@ -115,6 +124,7 @@ public class GameplayUIController : MonoBehaviour
         if (uiEvent.Editable != null)
         {
             _trackedEditable = uiEvent.Editable;
+            _panelSubject = uiEvent.Editable;
             _astroInfo.Update(uiEvent.Editable);
         }
     }
@@ -133,6 +143,7 @@ public class GameplayUIController : MonoBehaviour
     void ClearTrackedAstro()
     {
         _trackedEditable = null;
+        _panelSubject = null;
         _astroInfo.Toggle(false);
     }
     void HandleSpeedChanged()

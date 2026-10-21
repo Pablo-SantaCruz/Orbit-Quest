@@ -61,6 +61,7 @@ public class AstroManager : MonoBehaviour, ILimitable
             Astro astro = _astroFactory.Create(astroPresetEntry.EditableData.type, astroPresetEntry.Position);
             astro.UpdateBodyRadius(astroPresetEntry.EditableData.body.radius);
             astro.UpdateBodyRotationSpeed(astroPresetEntry.EditableData.body.rotationSpeed);
+            astro.UpdateExplorationMinimumTime(astroPresetEntry.EditableData.body.explorationMinimumTime);
             astro.UpdateOrbitRadius(astroPresetEntry.EditableData.orbit.radius);
             astro.UpdateOrbitGravity(astroPresetEntry.EditableData.orbit.gravity);
             if (astro.HasOrbiter())

@@ -10,6 +10,7 @@ public class AstroInfo : IPanel
     public RectTransform RectTransform {get; private set;}
     public readonly DropdownComponent Type;
     public readonly TextComponent GravitationalForce;
+    public readonly TextComponent Exploration;
 
     public AstroInfo(AstroInfoDependencies dependencies)
     {
@@ -17,6 +18,10 @@ public class AstroInfo : IPanel
         RectTransform = Root.GetComponent<RectTransform>();
         Type = new DropdownComponent(dependencies.AstroType);
         GravitationalForce = new TextComponent(dependencies.GravitationalForce);
+        Exploration = dependencies.Exploration != null
+            ? new TextComponent(dependencies.Exploration)
+            : null;
+        Exploration?.SetActive(false);
     }
     public void Toggle(bool active)
     {
@@ -27,7 +32,26 @@ public class AstroInfo : IPanel
         Type.UpdateValue((int)editable.Data.type);
         GravitationalForce.SetValue(editable.Data.orbit.gravity.ToString("F2"));
         GravitationalForce.SetActive(editable.Data.type != AstroType.Sun);
+        SetExploration(editable);
         Follow(editable);
+    }
+    public void SetExploration(IEditable editable)
+    {
+        if (Exploration == null)
+            return;
+
+        if (editable == null || editable.Data.type == AstroType.Sun)
+        {
+            Exploration.SetActive(false);
+            return;
+        }
+
+        int percent = 0;
+        if (editable is Astro astro && astro != null && astro.isActiveAndEnabled)
+            percent = Mathf.Clamp(Mathf.RoundToInt(astro.ExplorationPercent), 0, 100);
+
+        Exploration.SetValue(percent.ToString() + "%");
+        Exploration.SetActive(true);
     }
     public void Follow(IEditable editable)
     {
@@ -94,4 +118,5 @@ public class AstroInfoDependencies : PanelDependencies
 {
     public Transform AstroType;
     public Transform GravitationalForce;
+    public Transform Exploration;
 }

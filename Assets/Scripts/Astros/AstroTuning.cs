@@ -35,6 +35,12 @@ public static class AstroTuning
     public static float RotationSpeedEditMin = RotationSpeedMin;
     public static float RotationSpeedEditMax = RotationSpeedMax;
 
+    public const float ExplorationMinimumTimeDefault = 30f;
+    public const float ExplorationMinimumTimeMin = 1f;
+    public const float ExplorationMinimumTimeMax = 300f;
+    public static float ExplorationMinimumTimeEditMin = ExplorationMinimumTimeMin;
+    public static float ExplorationMinimumTimeEditMax = ExplorationMinimumTimeMax;
+
 #region Orbiter Path Settings
     public const float OrbiterPathMarginFactor = 0.5f;
     public const float OrbiterPathMarginMax = 20f;

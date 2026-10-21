@@ -25,6 +25,18 @@ public class Orb : MonoBehaviour, ILimitable
     private Vector2 _aimDirection;
     private bool _isAiming;
 
+    public Astro CapturedAstro
+    {
+        get
+        {
+            IOrbitable captured = _orbiterController?.CapturedOrbit;
+            if (captured is not Component component || component == null)
+                return null;
+
+            return component.GetComponentInParent<Astro>();
+        }
+    }
+
     public void SetInertiaStabilizer(bool value)
     {
         if (_playerData.InertiaResource == null) return;
@@ -76,6 +88,7 @@ public class Orb : MonoBehaviour, ILimitable
     void Update()
     {
         _playerData.ImpulseResource?.Tick(Time.deltaTime);
+        TickCapturedExploration();
 
         if (_playerData.FuelResource == null || _rb == null)
             return;
@@ -192,5 +205,21 @@ public class Orb : MonoBehaviour, ILimitable
     {
         if (_playerData == null) return;
         _orbiterController?.UpdateSettings(_playerData.ToOrbiterSettings());
+    }
+
+    void TickCapturedExploration()
+    {
+        if (_levelData == null || _levelData.IsPaused)
+            return;
+
+        GameState state = _levelData.CurrentState;
+        if (state != GameState.Precision && state != GameState.Contemplative)
+            return;
+
+        Astro captured = CapturedAstro;
+        if (captured == null || !captured.isActiveAndEnabled)
+            return;
+
+        captured.TickExploration(Time.deltaTime);
     }
 }

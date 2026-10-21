@@ -13,16 +13,29 @@ public class Astro : MonoBehaviour, IPointerDownHandler, IEditable, IDragHandler
     [SerializeField] OrbitData _orbitData;
     [SerializeField] BodyData _bodyData;
     [SerializeField] float _rotationSpeed = 5f;
+    [SerializeField] float _explorationMinimumTime = AstroTuning.ExplorationMinimumTimeDefault;
     [SerializeField] Transform _transform, _baseTransform, _orbitTransform;
     [SerializeField] LineRenderer _orbitPathRenderer;
+    [SerializeField] LineRenderer _explorationLine;
 
     private AstroSpawnPreset _spawnSource;
     private IOrbitable _orbit;
     private BodyShader _baseShader;
     private TransformOrbiter _orbiter;
     private bool _isSelected;
+    private float _accumulatedExplorationTime;
+    private bool _isExplored;
 
     public float BodyRadius => _bodyData.radius;
+    public bool IsExplored => _isExplored;
+    public float ExplorationPercent
+    {
+        get
+        {
+            float minimumTime = Mathf.Max(_explorationMinimumTime, 0.0001f);
+            return Mathf.Clamp(_accumulatedExplorationTime / minimumTime, 0f, 1f) * 100f;
+        }
+    }
     public bool HasOrbiter() => _orbiter != null;
     public LineRenderer OrbitPathRenderer => _orbitPathRenderer;
     public GameState CurrentGameState => _levelData?.CurrentState ?? GameState.None;
@@ -33,7 +46,8 @@ public class Astro : MonoBehaviour, IPointerDownHandler, IEditable, IDragHandler
         body = new EditableBodyData
         {
             radius = _bodyData.radius,
-            rotationSpeed = _rotationSpeed
+            rotationSpeed = _rotationSpeed,
+            explorationMinimumTime = _explorationMinimumTime
         },
         orbit = new EditableOrbitData
         {
@@ -86,6 +100,12 @@ public class Astro : MonoBehaviour, IPointerDownHandler, IEditable, IDragHandler
         if(_orbit == null) _orbit = _orbitTransform?.GetComponent<IOrbitable>();
         if(_baseShader == null) _baseShader = new BodyShader(_baseTransform?.GetComponent<Renderer>());
         if(_orbiter == null) _orbiter = GetComponent<TransformOrbiter>();
+        if(_explorationLine == null && _transform != null)
+        {
+            Transform line = _transform.Find("Exploration Line");
+            if (line != null)
+                _explorationLine = line.GetComponent<LineRenderer>();
+        }
     }
     void UpdateBaseValues()
     {
@@ -94,6 +114,8 @@ public class Astro : MonoBehaviour, IPointerDownHandler, IEditable, IDragHandler
 
         _baseTransform.localScale = Vector3.one * diameter;
         _baseShader?.SetColor(desiredColor);
+        if (Application.isPlaying)
+            ApplyExplorationLine();
     }
     void UpdateOrbitValues()
     {
@@ -138,7 +160,47 @@ public class Astro : MonoBehaviour, IPointerDownHandler, IEditable, IDragHandler
         _orbitData = orbitData;
         _bodyData = bodyData;
         _spawnSource = spawnSource;
+        // Pooled instances survive ClearAstros. A new spawn starts unexplored and
+        // drops any minimum edited on the instance that previously used this object.
+        ResetExploration();
+        UpdateExplorationMinimumTime(AstroTuning.ExplorationMinimumTimeDefault);
         Apply();
+    }
+
+    public void TickExploration(float deltaTime)
+    {
+        if (_isExplored || deltaTime <= 0f)
+            return;
+
+        float minimumTime = Mathf.Max(_explorationMinimumTime, 0.0001f);
+        _accumulatedExplorationTime = Mathf.Min(_accumulatedExplorationTime + deltaTime, minimumTime);
+        if (_accumulatedExplorationTime >= minimumTime)
+            _isExplored = true;
+    }
+
+    void ResetExploration()
+    {
+        _accumulatedExplorationTime = 0f;
+        _isExplored = false;
+    }
+
+    void ApplyExplorationLine()
+    {
+        if (_explorationLine == null)
+            return;
+
+        _explorationLine.useWorldSpace = false;
+        _explorationLine.positionCount = 2;
+
+        float radius = Mathf.Max(_bodyData.radius, 0.01f);
+        float width = Mathf.Max(0.03125f, radius * 0.08f);
+        _explorationLine.startWidth = width;
+        _explorationLine.endWidth = width;
+
+        // Local Y is perpendicular to the spin axis (local forward). Sit just outside the mesh.
+        float reach = radius * 1.05f;
+        _explorationLine.SetPosition(0, new Vector3(reach, -radius, 0f));
+        _explorationLine.SetPosition(1, new Vector3(reach, radius, 0f));
     }
 
     public void Deactivate()
@@ -173,6 +235,16 @@ public class Astro : MonoBehaviour, IPointerDownHandler, IEditable, IDragHandler
     public void UpdateBodyRotationSpeed(float rotationSpeed)
     {
         _rotationSpeed = rotationSpeed;
+    }
+
+    public void UpdateExplorationMinimumTime(float minimumTime)
+    {
+        if (minimumTime <= 0f)
+            minimumTime = AstroTuning.ExplorationMinimumTimeDefault;
+
+        _explorationMinimumTime = minimumTime;
+        if (_accumulatedExplorationTime < _explorationMinimumTime)
+            _isExplored = false;
     }
 
     public void UpdateOrbitRadius(float radius)

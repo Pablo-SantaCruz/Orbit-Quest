@@ -9,6 +9,7 @@ public class AstroEditableData : IPanel
     readonly public SliderComponent OrbitRadius;
     readonly public SliderComponent BodyRadius;
     readonly public SliderComponent BodyRotationSpeed;
+    readonly public SliderComponent ExplorationMinimumTime;
     public AstroEditableData(AstroEditableDataDependencies dependencies)
     {
         Root = dependencies.Root;
@@ -17,6 +18,7 @@ public class AstroEditableData : IPanel
         OrbitRadius = new SliderComponent(dependencies.OrbitRadius);
         BodyRadius = new SliderComponent(dependencies.BodyRadius);
         BodyRotationSpeed = new SliderComponent(dependencies.BodyRotationSpeed);
+        ExplorationMinimumTime = new SliderComponent(dependencies.ExplorationMinimumTime);
 
         ApplyRanges();
     }
@@ -27,6 +29,7 @@ public class AstroEditableData : IPanel
         OrbitRadius.UpdateValueRange(AstroTuning.OrbitRadiusEditMin, AstroTuning.OrbitRadiusEditMax);
         BodyRadius.UpdateValueRange(AstroTuning.BodyRadiusEditMin, AstroTuning.BodyRadiusEditMax);
         BodyRotationSpeed.UpdateValueRange(AstroTuning.RotationSpeedEditMin, AstroTuning.RotationSpeedEditMax);
+        ExplorationMinimumTime.UpdateValueRange(AstroTuning.ExplorationMinimumTimeEditMin, AstroTuning.ExplorationMinimumTimeEditMax);
     }
     public void Toggle(bool active)
     {
@@ -61,6 +64,7 @@ public class AstroEditableData : IPanel
         OrbitRadius.OnValueChanged += editable.UpdateOrbitRadius;
         BodyRadius.OnValueChanged += editable.UpdateBodyRadius;
         BodyRotationSpeed.OnValueChanged += editable.UpdateBodyRotationSpeed;
+        ExplorationMinimumTime.OnValueChanged += editable.UpdateExplorationMinimumTime;
     }
     private void UnsubscribeFromEditable(IEditable editable)
     {
@@ -68,6 +72,7 @@ public class AstroEditableData : IPanel
         OrbitRadius.OnValueChanged -= editable.UpdateOrbitRadius;
         BodyRadius.OnValueChanged -= editable.UpdateBodyRadius;
         BodyRotationSpeed.OnValueChanged -= editable.UpdateBodyRotationSpeed;
+        ExplorationMinimumTime.OnValueChanged -= editable.UpdateExplorationMinimumTime;
     }
     private void UpdateAstroDataToUI(IEditable editable)
     {
@@ -76,6 +81,14 @@ public class AstroEditableData : IPanel
         OrbitRadius.UpdateValue(editable.Data.orbit.radius);
         BodyRadius.UpdateValue(editable.Data.body.radius);
         BodyRotationSpeed.UpdateValue(editable.Data.body.rotationSpeed);
+
+        if (editable.Data.type != AstroType.Sun)
+        {
+            ExplorationMinimumTime.UpdateValue(editable.Data.body.explorationMinimumTime);
+            ExplorationMinimumTime.SetActive(true);
+        }
+        else
+            ExplorationMinimumTime.SetActive(false);
     }
 }
 
@@ -87,4 +100,5 @@ public class AstroEditableDataDependencies : PanelDependencies
     public Transform OrbitRadius;
     public Transform BodyRadius;
     public Transform BodyRotationSpeed;
+    public Transform ExplorationMinimumTime;
 }

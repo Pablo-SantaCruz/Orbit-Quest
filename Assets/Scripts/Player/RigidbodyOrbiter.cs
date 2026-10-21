@@ -384,6 +384,7 @@ public class RigidbodyOrbiter
 
     public Vector3[] TrajectoryPoints => _trajectoryPoints;
     public float Speed => _rb.linearVelocity.magnitude;
+    public IOrbitable CapturedOrbit => _capturedOrbit;
 
     public bool TryEvaluateCircularDeviation(out float deviation, out Vector3 center)
     {

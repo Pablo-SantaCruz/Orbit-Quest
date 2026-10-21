@@ -11,6 +11,7 @@ public interface IEditable
     void Deactivate();
     void UpdateBodyRadius(float radius);
     void UpdateBodyRotationSpeed(float rotationSpeed);
+    void UpdateExplorationMinimumTime(float minimumTime);
     void UpdateOrbitRadius(float radius);
     void UpdateOrbitGravity(float gravity);
     void UpdateOrbiterSpeed(float speed);
@@ -32,6 +33,7 @@ public struct EditableBodyData
 {
     public float radius;
     public float rotationSpeed;
+    public float explorationMinimumTime;
 }
 [Serializable]
 public struct EditableOrbitData
