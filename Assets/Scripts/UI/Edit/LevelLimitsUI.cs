@@ -29,6 +29,12 @@ public class LevelLimits : IPanel
             Min.OnValueChanged -= HandleMinValueChanged;
         }
     }
+    public void RefreshFromLimits()
+    {
+        if(!Root.activeSelf) return;
+        Min.UpdateValue(Limits.Min);
+        Max.UpdateValue(Limits.Max);
+    }
     void HandleMaxValueChanged(Vector2 value)
     {
         Limits.SetLimits(Limits.Min, value);

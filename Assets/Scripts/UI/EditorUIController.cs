@@ -45,6 +45,7 @@ public class EditorUIController : MonoBehaviour
         Astro.OnEditableClicked += HandleAstroClicked;
         PresetEvents.OnPresetNamesLoaded += _presetList.LoadPresets;
         PresetEvents.OnPresetSelected += _presetList.HandlePresetSelected;
+        PresetEvents.OnPresetApplied += HandlePresetApplied;
         _levelData.StateEntered += HandleStateEntered;
         _levelData.StateExited += HandleStateExited;
         if (_gameSettings != null)
@@ -59,6 +60,7 @@ public class EditorUIController : MonoBehaviour
         Astro.OnEditableClicked -= HandleAstroClicked;
         PresetEvents.OnPresetNamesLoaded -= _presetList.LoadPresets;
         PresetEvents.OnPresetSelected -= _presetList.HandlePresetSelected;
+        PresetEvents.OnPresetApplied -= HandlePresetApplied;
         _levelData.StateEntered -= HandleStateEntered;
         _levelData.StateExited -= HandleStateExited;
         if (_gameSettings != null)
@@ -190,6 +192,11 @@ public class EditorUIController : MonoBehaviour
         
         _selectedEditable.Deselected();
         _selectedEditable = null;
+    }
+    void HandlePresetApplied()
+    {
+        _playerEditableData.ConnectPlayerDataToUI();
+        _levelLimitsUI.RefreshFromLimits();
     }
     public void LoadSelectedPreset()
     {

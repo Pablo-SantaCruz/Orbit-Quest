@@ -3,16 +3,21 @@ using System;
 public static class PresetEvents
 {
     public static event Action<PresetNameComponent> OnPresetSelected;
-    public static event Action<PresetData> OnPresetLoaded;
+    public static event Action<PresetFile> OnPresetFileLoaded;
+    public static event Action OnPresetApplied;
     public static event Action<string[]> OnPresetNamesLoaded;
     public static event Action<string> OnPresetSaved;
     public static void RaisePresetSelectedEvent(PresetNameComponent preset)
     {
         OnPresetSelected?.Invoke(preset);
     }
-    public static void RaisePresetLoadedEvent(PresetData presetData)
+    public static void RaisePresetFileLoadedEvent(PresetFile file)
     {
-        OnPresetLoaded?.Invoke(presetData);
+        OnPresetFileLoaded?.Invoke(file);
+    }
+    public static void RaisePresetAppliedEvent()
+    {
+        OnPresetApplied?.Invoke();
     }
     public static void RaisePresetNamesLoadedEvent(string[] presetNames)
     {

@@ -11,26 +11,7 @@ public class AstroManager : MonoBehaviour, ILimitable
     {
         _astroFactory = new AstroFactory(_astroFactoryDependencies);
     }
-    void OnEnable()
-    {
-        PresetEvents.OnPresetLoaded += HandlePresetLoaded;
-        PresetEvents.OnPresetSaved += HandlePresetSaved;
-    }
-    void OnDisable()
-    {
-        PresetEvents.OnPresetLoaded -= HandlePresetLoaded;
-        PresetEvents.OnPresetSaved -= HandlePresetSaved;
-    }
-    
-    private void HandlePresetLoaded(PresetData presetData)
-    {
-        ClearAstros();
-        LoadAstros(presetData.AstroPresetEntries);
-        UpdateAstrosOrbit(presetData.AstroPresetEntries);
-        Limits.SetLimits(presetData.Limits.min, presetData.Limits.max);
-        _playerSpawnPoint.position = presetData.PlayerSpawnPoint;
-    }
-    private void HandlePresetSaved(string presetName)
+    public AstroPresetEntry[] CapturePresetEntries()
     {
         AstroPresetEntry[] astroPresetEntries = new AstroPresetEntry[_astros.Count];
         for (int i = 0; i < _astros.Count; i++)
@@ -43,8 +24,16 @@ public class AstroManager : MonoBehaviour, ILimitable
             entry.EditableData = editableData;
             astroPresetEntries[i] = entry;
         }
-        PresetData presetData = new PresetData(LimitsData.From(Limits), astroPresetEntries, _playerSpawnPoint.position);
-        PresetFileManager.Write(presetName, presetData);
+        return astroPresetEntries;
+    }
+    public void ApplyPresetEntries(AstroPresetEntry[] astroPresetEntries)
+    {
+        if (astroPresetEntries == null)
+            return;
+
+        ClearAstros();
+        LoadAstros(astroPresetEntries);
+        UpdateAstrosOrbit(astroPresetEntries);
     }
     private void ClearAstros()
     {
